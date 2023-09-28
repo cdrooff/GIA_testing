@@ -8,7 +8,8 @@
 # Set the name of the input file
 set infile = mack22-NOAM_1.gps3d
 
-
+# extra comments here for highly important analysis
+# super extra comments here for incredible, groundbreaking work
 
 # Toggle which model to sample, either ICE3G or ICE6G
 
