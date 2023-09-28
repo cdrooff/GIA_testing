@@ -1,0 +1,8 @@
+#These shumagin velocity files were copied over from shanshan
+#Path to files: /home/shanshan/2016_2017/Shumagin/Vec_GIA_Correction_From_Jeff/Velocities_Shanshan/Shumagin_GIA_ic3g_*
+#These look like they were interpolated from a grd file, look more into this later
+#Some minor edits were made to the files, documented here:
+#
+#For Shumagin_GIA_ic3g_horzvert.gmtvec:
+#veni stations FOG, FING, VSG, TWIN, EC44, STAR, SENI, PEVA, 9016 placed at the bottom of the list in order to match up sequentially with the other files 
+#CENT, CONG, HARP, OLET, RDMD, YAST removed

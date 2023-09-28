@@ -1,0 +1,5 @@
+mv LGM-ICE3G/LGM-ICE3G_masterlist.vel LGM-ICE3G/LGM-ICE3G_masterlist.vels
+mv LGM-ICE3G/LGM-Sato_ICE3G.vel LGM-ICE3G/LGM-Sato_ICE3G.vels
+mv LGM-James/LGM-cascadia.vel LGM-James/LGM-cascadia.vels
+mv LGM-Wheeler/LGM-Wheeler_masterlist.vel LGM-Wheeler/LGM-Wheeler_masterlist.vels
+mv LGM-Wheeler/LGM-wheeler.vel LGM-Wheeler/LGM-wheeler.vels

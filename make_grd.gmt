@@ -1,0 +1,27 @@
+#!/bin/tcsh
+
+# Script to execute on singular xyz file, generates grid files of GIA predications
+
+set GIA_model = ICE_6G
+
+set component = E
+set component = N
+set component = Z
+
+set box = "180/240/53/71"
+
+#set spacing = 
+
+
+
+# This is pseudocode from yan hu
+
+#awk '{print $1, $2, $3, "1.0"}' ICE6G-N_xsort.txt | gmt blockmean -R$box -I4/4 -WI -V > junk.block
+
+awk '{print $1, $2, $3, "0"}' ICE6G-N.txt | blockmean -R$box -I4/4 -WI -V > junk.block
+
+surface junk.block -GICE6G-N.grd -I5m/2m -R$box -T0.5 -V
+
+#blockmean
+
+#surface 

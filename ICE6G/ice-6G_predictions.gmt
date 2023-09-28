@@ -1,0 +1,39 @@
+#!/bin/tcsh
+
+# Make a figure comparing the ICE-3G and ICE-6G 3-D GIA predictions
+
+set w_lon = 210
+set e_lon = 240
+set s_lat = 55
+set n_lat = 70
+
+set map_box = -R$w_lon/$e_lon/$s_lat/$n_lat
+
+set scale = 6i
+set pro_lon = `echo $w_lon $e_lon | awk '{printf "%.0f", ($1+$2)/2.0}'`
+set pro_lat = `echo $n_lat $s_lat | awk '{printf "%.0f", ($1+$2)/2.0}'`
+set map_pro = -JC$pro_lon/$pro_lat/$scale
+
+set outfile = ice-6G_prediction.ps
+
+psbasemap $map_pro $map_box -Ba5 -K -P -Y2i -V > $outfile
+
+
+
+# Make grd files from the 3-D velocity rates predicted by the ICE6G model
+xyz2grd ICE6G-E.txt -I0.25/0.25 $map_box -V -GICE6G-E.grd
+xyz2grd ICE6G-N.txt -I0.25/0.25 $map_box -V -GICE6G-N.grd
+xyz2grd ICE6G-V.txt -I0.25/0.25 $map_box -V -GICE6G-V.grd
+
+
+# Make contours of the vertical predictions
+#grdcontour ICE6G-V.grd -S -R$map_box -J -Gd2i -D -V -K -O -P
+
+makecpt -Cjet -T-3.5/5/0.01 -Z -V > GIA.cpt
+
+grdimage ICE6G-E.grd -CGIA.cpt $map_pro $map_box -O -K -P -V >> $outfile
+
+pscoast $map_pro $map_box -O -P -Di -N1 -V -K -W0.5p >> $outfile
+psscale -D3i/-0.65i/6c/0.3ch -B1 -CGIA.cpt -O -V -P >> $outfile
+
+gs $outfile

@@ -1,0 +1,54 @@
+#!/bin/tcsh -f
+#
+set prefix = GIA
+set PS_OUT=${prefix}_horz_interp2.ps
+gmtset MEASURE_UNIT inch
+gmtset DEGREE_FORMAT 3
+gmtset BASEMAP_TYPE PLAIN
+gmtset TICK_LENGTH 0.05
+gmtset ANOT_FONT_SIZE 8 
+gmtset ANOT_FONT Times-Roman
+gmtset ANOT_OFFSET 0.02
+gmtset LABEL_FONT Times-Roman 
+gmtset LABEL_FONT_SIZE 8 
+gmtset FRAME_PEN 1
+gmtset FRAME_WIDTH 0.05
+gmtset DOTS_PR_INCH 300
+
+#######  For 3d TOPO use these lines
+#
+set topogrd = /Users/jeff/bin/GMT/topo/Alaska_main.grd
+set intensgrd = /Users/jeff/bin/GMT/topo/Alaska_main.intens.315.grd
+set colortab = /Users/jeff/bin/GMT/colortabs/GMT_gray.cpt
+
+psbasemap  -R-180/-120/53/72 -Ba5f1/a5f1WSNE -JL-150/55/55/65/7i  -K -P -V  > $PS_OUT
+grdimage  -R -J -B $topogrd -C$colortab -I$intensgrd  -K -O -P -V >> $PS_OUT
+pscoast    -R -Df -B -J -W1 -S200/255/255 -A5 -O -K -P -V  >> $PS_OUT
+
+
+psxy -R -J /Users/jeff/bin/GMT/linefiles/alaska_faults_new2.gmtlin /Users/jeff/bin/GMT/linefiles/tintina_fault.gmt  /Users/jeff/bin/GMT/linefiles/tintina.xy  -W2 -P  -O -K -M  -V >> $PS_OUT
+
+#  Plot vectors on a 1 by 1 degree grid
+
+## awk '$1 == 2*int($1/2) && $2 == 2*int($2/2) {print $1,$2,$3,$4,"0.0 0.0 0.0"}' ${prefix}_vel.enu \
+awk '$1 == int($1) && $2 == int($2) {print $1,$2,$3,$4,"0.0 0.0 0.0"}' ${prefix}_vel.enu \
+   | psvelo -J -R -A0.04/0.06/0.06 -Sr0.075/0.95/0 -G255 -L -W1 -P -O -K -V >> $PS_OUT
+
+awk '{print $1,$2,10*$3,10*$4,$5,$6,$7}' Alaska_GIAmodel_horz.gmtvec \
+   | psvelo -J -R -A0.02/0.03/0.03 -Sr0.075/0.95/0 -G0 -L -W1 -P -O -K -V >> $PS_OUT
+
+# Draw a box, and then plot the scale vector inside it
+
+psxy -J -R -N -W3 -G255 -L -K -O -W2 -P -V <<END >> $PS_OUT
+206.5 54.25
+206.5 55.5
+213.5 55.5
+213.5 54.25
+206.5 54.25
+END
+
+psvelo -J -R -A0.04/0.06/0.06 -Sr0.075/0.95/12 -L -W1 -G0 -P -O -V <<END >> $PS_OUT
+212 55.00 2 0.0 0.0 0.0 0.0 2 mm/yr
+END
+
+ps2raster -Tg -A $PS_OUT

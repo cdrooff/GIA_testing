@@ -1,0 +1,6 @@
+#!/bin/tcsh
+
+# gmt script meant to dump out the contour intervals of the vertical displacement field into linefiles, for use in plotting
+
+
+grdcontour GIA_vert.grd -S -R -J -L-2/-1 -Gd2i -C1 -A2s12 -Wc3/0/0/255 -Wa3/0/0/255 -D -V -K -O -P

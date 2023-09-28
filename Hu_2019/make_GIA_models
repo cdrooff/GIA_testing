@@ -1,0 +1,77 @@
+#!/bin/tcsh -f
+#
+set giadir = /Users/jeff/matlab/VTDP/Ice_models
+set models = ( Hu2013 LGM-ICE3G LGM-James LGM-Wheeler )
+
+# Generate a new grid for each model, including a plot
+
+foreach model ( $models )
+   cd $giadir/$model
+   ../interpolate_gia.gmt $model
+   ../GIA_interp_horz.gmt $model
+   ../GIA_interp_vert.gmt $model
+end
+
+# Merge the models together
+
+cd $giadir
+
+grdmath Hu2013/Hu2013_east.grd  LGM-ICE3G/LGM-ICE3G_east.grd  ADD LGM-James/LGM-James_east.grd  ADD LGM-Wheeler/LGM-Wheeler_east.grd  ADD = GIA_east.grd
+grdmath Hu2013/Hu2013_north.grd LGM-ICE3G/LGM-ICE3G_north.grd ADD LGM-James/LGM-James_north.grd ADD LGM-Wheeler/LGM-Wheeler_north.grd ADD = GIA_north.grd
+grdmath Hu2013/Hu2013_vert.grd  LGM-ICE3G/LGM-ICE3G_vert.grd  ADD LGM-James/LGM-James_vert.grd  ADD LGM-Wheeler/LGM-Wheeler_vert.grd  ADD = GIA_vert.grd
+
+##
+#  Extract a grid of values to a simple text file using grdtrack
+
+#  Generate the xy file
+#   This is a bit of a trick -- use grdsample and grd2xyz to get the lat-long
+#   of a regular grid at the desired spacing
+
+set pref = GIA_
+
+grdsample ${pref}north.grd -Gnew.grd -I0.25
+grd2xyz new.grd | awk '{print $1, $2}' > ${pref}grid.xy
+
+#  Calculate values. Each call of grdtrack adds a column to the output
+
+grdtrack ${pref}grid.xy -G${pref}east.grd \
+   | grdtrack -G${pref}north.grd \
+   | grdtrack -G${pref}vert.grd > ${pref}vel.enu
+
+#  Sample the total GIA model at all of the site locations. The final column is a line number
+#   that will allow reconstruction of the complete file (grdtrack does not output anything
+#   if the input coordinates are outside the grid).
+
+awk '{lon = $2} $2 > 180 {lon = $2 - 360} {n+=1} {print lon,$3,n}' ../Alaska.gps3d > Alaska.xy
+grdtrack Alaska.xy -G${pref}east.grd \
+   | grdtrack -G${pref}north.grd \
+   | grdtrack -G${pref}vert.grd \
+   | awk 'BEGIN {n = 0} {n += 1 ; while (n < $3) { print "0 0 " n " 0 0 0" ; n += 1 } } {print $0}' \
+   > Alaska_GIA_modelvel.enu
+
+#  The last awk statement fills in the missing lines, for sites that fall outside the grid
+#     and don't have lines output. This awk script will not catch missing lines at the end of the file
+#     so that must be done separately
+
+set nsta = `wc -l Alaska.xy | awk '{print $1}'`
+set nout = `wc -l Alaska_GIA_modelvel.enu | awk '{print $1}'`
+while ( $nsta > $nout )
+   @ nout = $nout + 1
+   echo "0 0 $nout 0 0 0" >> Alaska_GIA_modelvel.enu
+end
+
+# Finally, construct the model file by pasting together the first part of the gps3d file
+#   (station name and coordinates) with the model values. Strip out zero model values
+
+paste ../Alaska.gps3d Alaska_GIA_modelvel.enu \
+   |  awk '{print $1,$2,$3,$4,0.1*$14,0.1*$15,0.1*$16}' \
+   | grep -v '0 0 0$' > Alaska_GIAmodel.gps3d
+
+awk '{print $2,$3,$5,$6,0,0,0,$1}' Alaska_GIAmodel.gps3d > Alaska_GIAmodel_horz.gmtvec
+awk '{print $2,$3,0,$7,0,0,0,$1}'  Alaska_GIAmodel.gps3d > Alaska_GIAmodel_vert.gmtvec
+
+
+# Make plots for the total GIA model
+
+./GIA_interp_horz.gmt GIA
+./GIA_interp_vert.gmt GIA

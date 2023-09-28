@@ -1,0 +1,71 @@
+#!/bin/tcsh -f
+#
+
+set pref = "$1_"
+
+set range = "-180/-120/53/71"
+
+#set spacing  = "15m/15m"
+switch ( $1 )
+ 
+   case Hu2013:
+      set spacing  = "15m/15m"
+   breaksw
+ 
+   case LGM-ICE3G:
+   case LGM-ICE3G-Hu_earth:
+   case LGM-ICE3G-Sato_earth:
+      set spacing  = "4/4"
+   breaksw
+ 
+   case LGM-Wheeler:
+      set spacing  = "4/4"
+   breaksw
+ 
+   case LGM-James:
+      set spacing  = "4/4"
+   breaksw
+
+endsw
+
+
+if ( -e gia_vels ) /bin/rm -f gia_vels
+cat *vels > tmp.vel
+mv tmp.vel gia_vels
+
+#  Extract and interpolate velocities
+
+#  East
+
+awk '{print $1, $2, $7, "1.0"}' gia_vels > ${pref}east.raw
+blockmean ${pref}east.raw -R$range -I$spacing -WI -V > ${pref}east.block
+surface ${pref}east.block -G${pref}east.grd  -I5m/2m -R$range -T0.5
+
+#  North
+
+awk '{print $1, $2, -1*$6, "1.0"}' gia_vels > ${pref}north.raw
+blockmean ${pref}north.raw -R$range -I$spacing -WI -V > ${pref}north.block
+surface ${pref}north.block -G${pref}north.grd  -I5m/2m -R$range -T0.5
+
+#  Vertical
+
+awk '{print $1, $2, $5, "1.0"}' gia_vels > ${pref}vert.raw
+blockmean ${pref}vert.raw -R$range -I$spacing -WI -V > ${pref}vert.block
+surface ${pref}vert.block -G${pref}vert.grd  -I5m/2m -R$range -T0.5
+
+
+##
+#  Extract a grid of values to a simple text file using grdtrack
+
+#  Generate the xy file
+#   This is a bit of a trick -- use grdsample and grd2xyz to get the lat-long
+#   of a regular grid at the desired spacing
+
+grdsample ${pref}north.grd -Gnew.grd -I0.25
+grd2xyz new.grd | awk '{print $1, $2}' > ${pref}grid.xy
+
+#  Calculate values. Each call of grdtrack adds a column to the output
+
+grdtrack ${pref}grid.xy -G${pref}east.grd \
+   | grdtrack -G${pref}north.grd \
+   | grdtrack -G${pref}vert.grd > ${pref}vel.enu
